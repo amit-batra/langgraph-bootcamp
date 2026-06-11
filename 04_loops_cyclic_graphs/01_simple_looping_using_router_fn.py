@@ -12,7 +12,7 @@ class State(TypedDict):
     iteration_count: int
 
 NUMBER_OF_ITERATIONS: int = 5
-MERMAID_FILE_PATH: str = "target/mermain_graph.png"
+MERMAID_FILE_PATH: str = "target/mermaid_graph.png"
 
 def should_continue_or_terminate(state: State) -> Literal["continue", "terminate"]:
     print(f"Checking iteration_count {state['iteration_count']} against {NUMBER_OF_ITERATIONS}")
