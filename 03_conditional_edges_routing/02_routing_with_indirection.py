@@ -1,25 +1,26 @@
 # Implements a Diamond Shape Conditional Graph
-#                +-----------+  
-#                | __start__ |  
-#                +-----------+  
-#                      .        
-#               .             .
-#         .                        .
-# +------------------+  +------------------+  
-# | __mod_positive__ |  | __mod_negative__ |  
-# +------------------+  +------------------+
-#         .                        .
-#               .             .
-#                      .        
-#                      .        
-#                 +----------+   
-#                 | __sqrt__ |   
-#                 +----------+  
-#                      .        
-#                      .        
-#                 +---------+   
-#                 | __end__ |   
-#                 +---------+  
+#            +-----------+  
+#            | __start__ |  
+#            +-----------+  
+#                  .        
+#                  .        
+#            .          .
+#       .                    .
+# +--------------+  +--------------+  
+# | mod_positive |  | mod_negative |  
+# +--------------+  +--------------+
+#       .                    .
+#            .          .
+#                  .        
+#                  .        
+#              +------+   
+#              | sqrt |   
+#              +------+  
+#                  .        
+#                  .        
+#             +---------+   
+#             | __end__ |   
+#             +---------+  
 #
 # Over and above the previous example, this example insulates the router function
 # from knowing the exact node names by going through a mapping layer.
