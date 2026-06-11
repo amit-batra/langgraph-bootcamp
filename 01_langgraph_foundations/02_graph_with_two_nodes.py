@@ -1,22 +1,18 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 
-
 class State(TypedDict):
     message: str
 
-
-def hello_node(state: State):
+def hello_node(state: State) -> State:
     return {
         "message": "Hello"
     }
 
-
-def world_node(state: State):
+def world_node(state: State) -> State:
     return {
         "message": state["message"] + ", World!"
     }
-
 
 builder:StateGraph = StateGraph(State)
 
@@ -27,7 +23,7 @@ builder.add_edge(START, "hello")
 builder.add_edge("hello", "world")
 builder.add_edge("world", END)
 
-graph = builder.compile()
+graph: StateGraph = builder.compile()
 
 initial_state: State = {}
 final_state: State = graph.invoke(initial_state)

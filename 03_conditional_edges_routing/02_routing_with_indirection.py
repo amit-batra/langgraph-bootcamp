@@ -1,0 +1,84 @@
+# Implements a Diamond Shape Conditional Graph
+#                +-----------+  
+#                | __start__ |  
+#                +-----------+  
+#                      .        
+#               .             .
+#         .                        .
+# +------------------+  +------------------+  
+# | __mod_positive__ |  | __mod_negative__ |  
+# +------------------+  +------------------+
+#         .                        .
+#               .             .
+#                      .        
+#                      .        
+#                 +----------+   
+#                 | __sqrt__ |   
+#                 +----------+  
+#                      .        
+#                      .        
+#                 +---------+   
+#                 | __end__ |   
+#                 +---------+  
+#
+# Over and above the previous example, this example insulates the router function
+# from knowing the exact node names by going through a mapping layer.
+
+from math import sqrt
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    number: float
+
+def mod_positive_number(state: State) -> State:
+    return {
+        "number": state["number"]
+    }
+
+def mod_negative_number(state: State) -> State:
+    return {
+        "number": -state["number"]
+    }
+
+def sqrt_number(state: State) -> State:
+    return {
+        "number": sqrt(state["number"])
+    }
+
+def router_function(state: State) -> str:
+    if state["number"] >= 0:
+        return "left_edge"
+    else:
+        return "right_edge"
+
+builder:StateGraph = StateGraph(State)
+
+builder.add_node("mod_positive", mod_positive_number)
+builder.add_node("mod_negative", mod_negative_number)
+builder.add_node("sqrt", sqrt_number)
+
+# This is where we introduce a layer of indirection between the router
+# and the node names.
+builder.add_conditional_edges(
+    START,
+    router_function,
+    {
+        "left_edge":  "mod_positive",
+        "right_edge": "mod_negative"
+    }
+)
+builder.add_edge("mod_positive", "sqrt")
+builder.add_edge("mod_negative", "sqrt")
+builder.add_edge("sqrt", END)
+
+graph: StateGraph = builder.compile()
+print(graph.get_graph().draw_ascii())
+
+initial_state_positive: State = {"number": 100.0}
+final_state_positive: State = graph.invoke(initial_state_positive)
+print(final_state_positive)
+
+initial_state_negative: State = {"number": -64.0}
+final_state_negative: State = graph.invoke(initial_state_negative)
+print(final_state_negative)
