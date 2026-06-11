@@ -1,5 +1,7 @@
 from typing import TypedDict
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 
 class State(TypedDict):
     name: str
@@ -16,7 +18,7 @@ def age_node(state: State) -> State:
         "age": 48
     }
 
-builder:StateGraph = StateGraph(State)
+builder: StateGraph = StateGraph(State)
 
 builder.add_node("name_node", name_node)
 builder.add_node("age_node", age_node)
@@ -25,11 +27,10 @@ builder.add_edge(START, "name_node")
 builder.add_edge("name_node", "age_node")
 builder.add_edge("age_node", END)
 
-graph: StateGraph = builder.compile()
+graph: CompiledStateGraph = builder.compile()
+print(graph.get_graph().draw_ascii())
 
 initial_state: State = {}
 final_state: State = graph.invoke(initial_state)
 
 print(final_state)
-
-print(graph.get_graph().draw_ascii())

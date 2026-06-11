@@ -28,7 +28,9 @@
 
 from math import sqrt
 from typing import TypedDict, Literal
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 
 class State(TypedDict):
     number: float
@@ -55,7 +57,7 @@ def router_function(state: State) -> Literal["left_edge", "right_edge"]:
     else:
         return "right_edge"
 
-builder:StateGraph = StateGraph(State)
+builder: StateGraph = StateGraph(State)
 
 builder.add_node("mod_positive", mod_positive_number)
 builder.add_node("mod_negative", mod_negative_number)
@@ -75,7 +77,7 @@ builder.add_edge("mod_positive", "sqrt")
 builder.add_edge("mod_negative", "sqrt")
 builder.add_edge("sqrt", END)
 
-graph: StateGraph = builder.compile()
+graph: CompiledStateGraph = builder.compile()
 print(graph.get_graph().draw_ascii())
 
 initial_state_positive: State = {"number": 100.0}

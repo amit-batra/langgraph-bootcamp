@@ -1,5 +1,7 @@
 from typing import TypedDict, Annotated
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 
 def mul_reducer(current: int | None, update: int) -> int:
     if current in (None, 0):
@@ -24,7 +26,7 @@ def third_number(state: State):
         "number": 4
     }
 
-builder:StateGraph = StateGraph(State)
+builder: StateGraph = StateGraph(State)
 
 builder.add_node("first_number", first_number)
 builder.add_node("second_number", second_number)
@@ -35,10 +37,10 @@ builder.add_edge("first_number", "second_number")
 builder.add_edge("second_number", "third_number")
 builder.add_edge("third_number", END)
 
-graph: StateGraph = builder.compile()
+graph: CompiledStateGraph = builder.compile()
+print(graph.get_graph().draw_ascii())
 
 initial_state: State = {}
 final_state: State = graph.invoke(initial_state)
 
 print(final_state)
-print(graph.get_graph().draw_ascii())

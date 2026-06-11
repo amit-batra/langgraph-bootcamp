@@ -1,6 +1,7 @@
 from typing import TypedDict
 
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 
 class State(TypedDict):
     message: str
@@ -18,7 +19,8 @@ builder.add_node("greeting", greeting_node)
 builder.add_edge(START, "greeting")
 builder.add_edge("greeting", END)
 
-graph: StateGraph = builder.compile()
+graph: CompiledStateGraph = builder.compile()
+print(graph.get_graph().draw_ascii())
 
 initial_state: State = {
     "message": "Hello from LangGraph!"
