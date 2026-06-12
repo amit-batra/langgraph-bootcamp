@@ -10,9 +10,8 @@ import sys
 from typing import Any, Callable
 
 from dotenv import load_dotenv
-from langchain.messages import AIMessage
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import BaseMessage, HumanMessage, ToolCall, ToolMessage
+from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, AIMessage, ToolCall
 from langchain_core.runnables import Runnable
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import tool
