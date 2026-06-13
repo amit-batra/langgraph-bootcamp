@@ -1,30 +1,30 @@
 # This script illustrates the basic fan-out pattern in which multiple nodes
 # execute in parallel and then combine in the next step.
-#                   +-----------+                    
-#                   | __start__ |                    
-#                  *+-----------+***                 
-#               ***        *        ***              
-#           ****           *           ****          
-#         **               *               **        
-# +--------+          +--------+          +--------+ 
-# | node_a |          | node_b |          | node_c | 
-# +--------+****      +--------+       ***+--------+ 
-#               ***        *        ***              
-#                  ****    *    ****                 
-#                      **  *  **                     
-#                 +---------------+                  
-#                 | combine_nodes |                  
-#                 +---------------+                  
-#                          *                         
-#                          *                         
-#                          *                         
-#                     +---------+                    
-#                     | __end__ |                    
-#                     +---------+                    
+#                   +-----------+
+#                   | __start__ |
+#                  *+-----------+***
+#               ***        *        ***
+#           ****           *           ****
+#         **               *               **
+# +--------+          +--------+          +--------+
+# | node_a |          | node_b |          | node_c |
+# +--------+****      +--------+       ***+--------+
+#               ***        *        ***
+#                  ****    *    ****
+#                      **  *  **
+#                 +---------------+
+#                 | combine_nodes |
+#                 +---------------+
+#                          *
+#                          *
+#                          *
+#                     +---------+
+#                     | __end__ |
+#                     +---------+
 
 from json import dumps
 from time import time
-from typing import TypedDict
+from typing import TypedDict, Any
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -34,30 +34,31 @@ class State(TypedDict):
     step_b_result: str
     step_c_result: str
 
-def step_a(state: State) -> State:
+def step_a(state: State) -> dict[str, Any]:
     # Fetch the current timestamp
     timestamp: float = time()
     return {
         "step_a_result": f"Step A at {timestamp}"
     }
 
-def step_b(state: State) -> State:
+def step_b(state: State) -> dict[str, Any]:
     # Fetch the current timestamp
     timestamp: float = time()
     return {
         "step_b_result": f"Step B at {timestamp}"
     }
 
-def step_c(state: State) -> State:
+def step_c(state: State) -> dict[str, Any]:
     # Fetch the current timestamp
     timestamp: float = time()
     return {
         "step_c_result": f"Step C at {timestamp}"
     }
 
-def combine(state: State) -> State:
+def combine(state: State) -> dict[str, Any]:
     formatted_output: str = dumps(state, indent=2, sort_keys=True)
     print(f"Final state: {formatted_output}")
+    return {}
 
 def create_compiled_graph() -> CompiledStateGraph:
     builder: StateGraph = StateGraph(State)

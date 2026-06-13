@@ -38,13 +38,13 @@
 import json
 import os
 import sys
-from typing import Callable, TypedDict, Annotated, Any
+from typing import TypedDict, Annotated, Any, cast
 
 from dotenv import load_dotenv
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage, ToolCall
 from langchain_core.runnables import Runnable
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import add_messages
 from langgraph.graph import StateGraph, START, END
@@ -79,7 +79,7 @@ def add(a: float, b: float) -> float:
     return a + b
 
 # A dictionary to map tool names to their actual functions
-tools_mapping: dict[str, Callable] = {
+tools_mapping: dict[str, BaseTool] = {
     "add": add,
     "multiply": multiply
 }
@@ -90,13 +90,13 @@ def validate_environment_variables() -> tuple[str, str]:
 
     _ = load_dotenv()
 
-    api_key:str = os.getenv("GOOGLE_API_KEY")
+    api_key: str | None = os.getenv("GOOGLE_API_KEY")
     if api_key is None:
         print("Unable to read the Google API key.")
         print("Please set the environment variable GOOGLE_API_KEY.")
         sys.exit(1)
 
-    model_name = os.getenv("GOOGLE_MODEL_NAME")
+    model_name: str | None = os.getenv("GOOGLE_MODEL_NAME")
     if model_name is None:
         print("Unable to read the environment variable GOOGLE_MODEL_NAME.")
         print(f"Defaulting to {DEFAULT_MODEL_NAME}.")
@@ -105,7 +105,7 @@ def validate_environment_variables() -> tuple[str, str]:
     return api_key, model_name
 
 # Agent Node - Execution Starts with this Node
-def initialize_llm(state: AgenticState) -> AgenticState:
+def initialize_llm(state: AgenticState) -> dict[str, Any]:
     """Loads the LLM and binds the available tools"""
 
     # Validate that the API Key exists and Fetch the Model Name
@@ -125,7 +125,7 @@ def initialize_llm(state: AgenticState) -> AgenticState:
 
 # Agent Node - This node will be invoked the first time and subsequently
 # after every tool invovation.
-def invoke_llm(state: AgenticState) -> AgenticState:
+def invoke_llm(state: AgenticState) -> dict[str, Any]:
     """Invokes the LLM with the history of all messages generated so far"""
 
     # Invoke the LLM passing it the entire list of messages
@@ -143,18 +143,18 @@ def invoke_llm(state: AgenticState) -> AgenticState:
 
 # Agent Node - This node will be invoked every time the LLM returns
 # one or more tool calls in its response.
-def invoke_tools(state: AgenticState) -> AgenticState:
+def invoke_tools(state: AgenticState) -> dict[str, Any]:
     """Invokes one or more tools suggested by the LLM"""
 
     tool_messages: list[ToolMessage] = []
-    last_message: AIMessage = state["llm_messages"][-1]
+    last_message: AIMessage = cast(AIMessage, state["llm_messages"][-1])
     tool_call: ToolCall
     for tool_call in last_message.tool_calls:
         tool_name: str = tool_call["name"]
         tool_args: dict[str, Any] = tool_call["args"]
-        tool_id: str = tool_call["id"]
+        tool_id: str | None = tool_call["id"]
 
-        tool_reference: Callable = tools_mapping[tool_name]
+        tool_reference: BaseTool = tools_mapping[tool_name]
         tool_result: Any = tool_reference.invoke(input=tool_args)
         tool_messages.append(ToolMessage(content=str(tool_result), tool_call_id=tool_id))
         print(f"Called tool {tool_name} with arguments {tool_args} returned result {tool_result}")
@@ -164,12 +164,12 @@ def invoke_tools(state: AgenticState) -> AgenticState:
     }
 
 # Agent Node - Extracts the Final Response from the LLM
-def extract_final_response(state: AgenticState) -> AgenticState:
+def extract_final_response(state: AgenticState) -> dict[str, Any]:
     """Extracts the final response from the LLM"""
 
-    last_message: AIMessage = state["llm_messages"][-1]
+    last_message: AIMessage = cast(AIMessage, state["llm_messages"][-1])
     return {
-        "final_response": last_message.content[0]["text"]
+        "final_response": last_message.content[0]["text"] # type: ignore
     }
 
 # Routing Function
@@ -220,12 +220,12 @@ def main() -> None:
     graph: CompiledStateGraph = generate_compiled_graph()
     print(graph.get_graph().draw_ascii())
 
-    initial_state: AgenticState = {
+    initial_state: dict[str, Any] = {
         "user_query": "What is 12 times 8 plus 14?"
     }
 
     print(f"Invoking the agentic graph with the query: {initial_state['user_query']}")
-    final_state: AgenticState = graph.invoke(initial_state)
+    final_state: dict[str, Any] = graph.invoke(initial_state)
     print(f"Final response from the agent: {final_state['final_response']}")
 
 if __name__ == "__main__":

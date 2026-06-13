@@ -1,33 +1,33 @@
 # Implements a Diamond Shape Conditional Graph
-#            +-----------+  
-#            | __start__ |  
-#            +-----------+  
-#                  .        
-#                  .        
+#            +-----------+
+#            | __start__ |
+#            +-----------+
+#                  .
+#                  .
 #            .          .
 #       .                    .
-# +--------------+  +--------------+  
-# | mod_positive |  | mod_negative |  
+# +--------------+  +--------------+
+# | mod_positive |  | mod_negative |
 # +--------------+  +--------------+
 #       .                    .
 #            .          .
-#                  .        
-#                  .        
-#              +------+   
-#              | sqrt |   
-#              +------+  
-#                  .        
-#                  .        
-#             +---------+   
-#             | __end__ |   
-#             +---------+  
+#                  .
+#                  .
+#              +------+
+#              | sqrt |
+#              +------+
+#                  .
+#                  .
+#             +---------+
+#             | __end__ |
+#             +---------+
 #
 # Over and above the previous example, this example insulates declares the
 # router function return type to be a Literal (aka an Enum) so that the
 # possibility of a typo can be eliminated.
 
 from math import sqrt
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, Any
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -80,10 +80,10 @@ builder.add_edge("sqrt", END)
 graph: CompiledStateGraph = builder.compile()
 print(graph.get_graph().draw_ascii())
 
-initial_state_positive: State = {"number": 100.0}
-final_state_positive: State = graph.invoke(initial_state_positive)
+initial_state_positive: dict[str, Any] = {"number": 100.0}
+final_state_positive: dict[str, Any] = graph.invoke(initial_state_positive)
 print(final_state_positive)
 
-initial_state_negative: State = {"number": -64.0}
-final_state_negative: State = graph.invoke(initial_state_negative)
+initial_state_negative: dict[str, Any] = {"number": -64.0}
+final_state_negative: dict[str, Any] = graph.invoke(initial_state_negative)
 print(final_state_negative)

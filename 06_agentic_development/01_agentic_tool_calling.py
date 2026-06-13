@@ -7,14 +7,14 @@
 
 import os
 import sys
-from typing import Any, Callable
+from typing import Any
 
 from dotenv import load_dotenv
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, AIMessage, ToolCall
 from langchain_core.runnables import Runnable
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 
 DEFAULT_MODEL_NAME: str = "gemini-2.5-flash"
 
@@ -29,7 +29,7 @@ def add(a: float, b: float) -> float:
     return a + b
 
 # A dictionary to map tool names to their actual functions
-tools_mapping: dict[str, Callable] = {
+tools_mapping: dict[str, BaseTool] = {
     "add": add,
     "multiply": multiply
 }
@@ -39,13 +39,13 @@ def validate_environment_variables() -> tuple[str, str]:
 
     _ = load_dotenv()
 
-    api_key:str = os.getenv("GOOGLE_API_KEY")
+    api_key: str | None = os.getenv("GOOGLE_API_KEY")
     if api_key is None:
         print("Unable to read the Google API key.")
         print("Please set the environment variable GOOGLE_API_KEY.")
         sys.exit(1)
 
-    model_name = os.getenv("GOOGLE_MODEL_NAME")
+    model_name: str | None = os.getenv("GOOGLE_MODEL_NAME")
     if model_name is None:
         print("Unable to read the environment variable GOOGLE_MODEL_NAME.")
         print(f"Defaulting to {DEFAULT_MODEL_NAME}.")
@@ -82,9 +82,9 @@ def invoke_llm_and_print_response(
         for tool_call in llm_response.tool_calls:
             tool_name: str = tool_call["name"]
             tool_args: dict[str, Any] = tool_call["args"]
-            tool_id: str = tool_call["id"]
+            tool_id: str | None = tool_call["id"]
 
-            tool_reference: Callable = tools_mapping[tool_name]
+            tool_reference: BaseTool = tools_mapping[tool_name]
             tool_result: Any = tool_reference.invoke(input=tool_args)
             print(f"Called tool {tool_name} with arguments {tool_args} returned result {tool_result}")
 

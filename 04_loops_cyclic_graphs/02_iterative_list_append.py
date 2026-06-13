@@ -5,7 +5,7 @@
 # [1,2,3,4]
 # [1,2,3,4,5]
 
-from typing import TypedDict, Literal, Annotated
+from typing import TypedDict, Literal, Annotated, Any
 from operator import add
 
 from langgraph.graph import StateGraph, START, END
@@ -34,7 +34,7 @@ def append_to_list(state: State) -> State:
     last_item_in_list: int
 
     if numbers_in_state is None or len(numbers_in_state) == 0:
-       last_item_in_list = INITIAL_LIST_VALUE 
+       last_item_in_list = INITIAL_LIST_VALUE
     else:
        last_item_in_list = state["numbers"][-1]
 
@@ -63,18 +63,18 @@ graph.get_graph().draw_mermaid_png(output_file_path=MERMAID_FILE_PATH)
 print(f"Saved mermaid diagram of the langgraph to {MERMAID_FILE_PATH}")
 
 print("*** EXAMPLE 1 ***")
-initial_state1: State = {
+initial_state1: dict[str, Any] = {
     "numbers": [5]
 }
 print(f"Initial state: {initial_state1}")
 
-final_state1: State = graph.invoke(initial_state1)
+final_state1: dict[str, Any] = graph.invoke(initial_state1)
 print(f"Final state: {final_state1}")
 
 print("*** EXAMPLE 2 ***")
-initial_state2: State = {
+initial_state2: dict[str, Any] = {
 }
 print(f"Initial state: {initial_state2}")
 
-final_state2: State = graph.invoke(initial_state2)
+final_state2: dict[str, Any] = graph.invoke(initial_state2)
 print(f"Final state: {final_state2}")

@@ -1,28 +1,28 @@
-#                   +-----------+                    
-#                   | __start__ |                    
-#                  *+-----------+***                 
-#               ***        *        ***              
-#           ****           *           ****          
-#         **               *               **        
-# +--------+          +--------+          +--------+ 
-# | node_1 |          | node_2 |          | node_3 | 
-# +--------+****      +--------+       ***+--------+ 
-#               ***        *        ***              
-#                  ****    *    ****                 
-#                      **  *  **                     
-#                   +-------------+                  
-#                   | add_numbers |                  
-#                   +-------------+                  
-#                          *                         
-#                          *                         
-#                          *                         
-#                     +---------+                    
-#                     | __end__ |                    
-#                     +---------+                    
+#                   +-----------+
+#                   | __start__ |
+#                  *+-----------+***
+#               ***        *        ***
+#           ****           *           ****
+#         **               *               **
+# +--------+          +--------+          +--------+
+# | node_1 |          | node_2 |          | node_3 |
+# +--------+****      +--------+       ***+--------+
+#               ***        *        ***
+#                  ****    *    ****
+#                      **  *  **
+#                   +-------------+
+#                   | add_numbers |
+#                   +-------------+
+#                          *
+#                          *
+#                          *
+#                     +---------+
+#                     | __end__ |
+#                     +---------+
 
 from json import dumps
 from operator import add
-from typing import TypedDict, Annotated
+from typing import TypedDict, Annotated, Any
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -34,14 +34,14 @@ class State(TypedDict):
 # Instead of writing 3 separate node functions, we are using the outer
 # function to generate the function definitions of the 3 node functions.
 def append_number_to_state(number: int):
-    def graph_node(state: State) -> State:
+    def graph_node(state: State) -> dict[str, Any]:
         print(f"Appending {number} to {state['numbers']}")
         return {
             "numbers": [number]
         }
     return graph_node
 
-def add_numbers(state: State) -> State:
+def add_numbers(state: State) -> dict[str, Any]:
     return {
         "sum": sum(state["numbers"])
     }
@@ -70,11 +70,11 @@ def main() -> None:
     graph: CompiledStateGraph = create_compiled_graph()
     print(graph.get_graph().draw_ascii())
 
-    initial_state: State = {}
-    final_state: State = graph.invoke(initial_state)
+    initial_state: dict[str, Any] = {}
+    final_state: dict[str, Any] = graph.invoke(initial_state)
 
     formatted_output: str = dumps(final_state, indent=2, sort_keys=True)
-    print(f"Final state: {final_state}")
+    print(f"Final state: {formatted_output}")
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,8 @@
-# This example illustrates a simple loop in LangGraph that uses a 
+# This example illustrates a simple loop in LangGraph that uses a
 # routing function to decide whether it should continute looping
 # or terminate.
 
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, Any
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -53,10 +53,10 @@ graph: CompiledStateGraph = builder.compile()
 graph.get_graph().draw_mermaid_png(output_file_path=MERMAID_FILE_PATH)
 print(f"Created mermaid graph at {MERMAID_FILE_PATH}")
 
-initial_state: State = {
+initial_state: dict[str, Any] = {
     "number": 10
 }
 print(f"Initial state: {initial_state}")
 
-final_state: State = graph.invoke(initial_state)
+final_state: dict[str, Any] = graph.invoke(initial_state)
 print(f"Final state: {final_state}")
