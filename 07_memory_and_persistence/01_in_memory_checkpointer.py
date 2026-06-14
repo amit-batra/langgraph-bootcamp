@@ -28,6 +28,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import StateGraph, START, END, add_messages
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import StateSnapshot
 
 DEFAULT_MODEL_NAME: str = "gemini-2.5-flash"
 llm_reference: BaseChatModel
@@ -99,17 +100,26 @@ def main() -> None:
         }
     }
 
+    # 1st Graph Invocation: State Gets Saved to In-Memory Checkpointer
     graph.invoke({
         "messages": [
             HumanMessage(content="My name is Amit")
         ]
     }, config=config)
 
+    # 2nd Graph Invocation: State Gets Restored from In-Memory Checkpointer
     graph.invoke({
         "messages": [
             HumanMessage(content="What is my name?")
         ]
     }, config=config)
+
+    # Retrieve the State Snapshot
+    state_snapshot: StateSnapshot = graph.get_state(config=config)
+    values: dict[str, Any] = state_snapshot.values
+
+    # Dump the Values on Screen
+    print(f"State: {values}")
 
 if __name__ == "__main__":
     main()
