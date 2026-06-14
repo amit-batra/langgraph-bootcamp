@@ -18,7 +18,11 @@ MERMAID_FILE_PATH: str = "target/mermaid_graph.png"
 class State(TypedDict):
     numbers: Annotated[list[int], add]
 
+# Router function
 def should_continue_or_terminate(state: State) -> Literal["continue", "terminate"]:
+    """Router function: Decides whether to continue or terminate
+    the graph execution based on the length of the list of numbers."""
+
     list_length: int = 0 if state.get("numbers") is None else len(state["numbers"])
     print(f"Comparing list length {list_length} against {MAX_LIST_LENGTH}")
 
@@ -29,7 +33,12 @@ def should_continue_or_terminate(state: State) -> Literal["continue", "terminate
         print("Terminating...")
         return "terminate"
 
+# Node function
 def append_to_list(state: State) -> State:
+    """Node function: Appends a new number (N + 1) to the list
+    where N is the last number in the list. If the list is empty
+    it appends zero instead."""
+
     numbers_in_state: list[int] = state.get("numbers")
     last_item_in_list: int
 
@@ -44,37 +53,51 @@ def append_to_list(state: State) -> State:
         "numbers": [next_item_in_list]
     }
 
-builder: StateGraph = StateGraph(State)
+def construct_compiled_graph() -> CompiledStateGraph:
+    builder: StateGraph = StateGraph(State)
 
-builder.add_node("append_to_list", append_to_list)
+    # Create the node
+    builder.add_node("append_to_list", append_to_list)
 
-builder.add_edge(START, "append_to_list")
-builder.add_conditional_edges(
-    "append_to_list",
-    should_continue_or_terminate,
-    {
-        "continue": "append_to_list",
-        "terminate": END
+    # Add the deterministic edge
+    builder.add_edge(START, "append_to_list")
+
+    # Add the conditional edge
+    builder.add_conditional_edges(
+        "append_to_list",
+        should_continue_or_terminate,
+        {
+            "continue": "append_to_list",
+            "terminate": END
+        }
+    )
+
+    # Compile the state graph and generate a mermaid diagram
+    graph: CompiledStateGraph = builder.compile();
+    graph.get_graph().draw_mermaid_png(output_file_path=MERMAID_FILE_PATH)
+    print(f"Saved mermaid diagram of the langgraph to {MERMAID_FILE_PATH}")
+
+    return graph
+
+def main() -> None:
+    graph: CompiledStateGraph = construct_compiled_graph()
+
+    print("*** EXAMPLE 1 ***")
+    initial_state1: dict[str, Any] = {
+        "numbers": [5]
     }
-)
+    print(f"Initial state: {initial_state1}")
 
-graph: CompiledStateGraph = builder.compile();
-graph.get_graph().draw_mermaid_png(output_file_path=MERMAID_FILE_PATH)
-print(f"Saved mermaid diagram of the langgraph to {MERMAID_FILE_PATH}")
+    final_state1: dict[str, Any] = graph.invoke(initial_state1)
+    print(f"Final state: {final_state1}")
 
-print("*** EXAMPLE 1 ***")
-initial_state1: dict[str, Any] = {
-    "numbers": [5]
-}
-print(f"Initial state: {initial_state1}")
+    print("*** EXAMPLE 2 ***")
+    initial_state2: dict[str, Any] = {
+    }
+    print(f"Initial state: {initial_state2}")
 
-final_state1: dict[str, Any] = graph.invoke(initial_state1)
-print(f"Final state: {final_state1}")
+    final_state2: dict[str, Any] = graph.invoke(initial_state2)
+    print(f"Final state: {final_state2}")
 
-print("*** EXAMPLE 2 ***")
-initial_state2: dict[str, Any] = {
-}
-print(f"Initial state: {initial_state2}")
-
-final_state2: dict[str, Any] = graph.invoke(initial_state2)
-print(f"Final state: {final_state2}")
+if __name__ == "__main__":
+    main()
