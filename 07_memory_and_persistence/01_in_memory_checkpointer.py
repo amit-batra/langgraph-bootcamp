@@ -94,6 +94,8 @@ def main() -> None:
     global llm_reference
     llm_reference = load_llm(model_name=model_name)
 
+    # Each conversation should have a unique Thread ID for the
+    # Checkpointer to wrk correctly.
     config: RunnableConfig = {
         "configurable": {
             "thread_id": str(uuid.uuid4())
