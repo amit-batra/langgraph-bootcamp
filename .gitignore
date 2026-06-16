@@ -17,3 +17,6 @@ wheels/
 
 # Output files generated during code execution
 target/
+
+# SQLite DB files
+*.sqlite
