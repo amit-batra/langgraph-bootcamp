@@ -7,27 +7,41 @@
 # 2. Profession
 # 3. Favorite programming language
 #
-#           +-----------+
-#           | __start__ |
-#           +-----------+
-#                  *
-#                  *
-#                  *
-#          +-------------+
-#          | human_input | <----.
-#          +-------------+      .
-#           ...         ..      .
-#          .              ..    .
-#        ..                 .   .
-# +---------+           +----------+
-# | __end__ |           | llm_node |
-# +---------+           +----------+
+#               +-----------+
+#               | __start__ |
+#               +-----------+
+#                     *
+#                     *
+#                     *
+#           +-----------------+
+#    .----->| get_human_input |
+#    .      +-----------------+
+#    .         **           ..
+#    .       **               ..
+#    .     **                   ..
+# +------------+           +--------------+
+# | invoke_llm |           | save_profile |
+# +------------+           +--------------+
+#                                  *
+#                                  *
+#                                  *
+#                          +--------------+
+#                          | load_profile |
+#                          +--------------+
+#                                  *
+#                                  *
+#                                  *
+#                             +---------+
+#                             | __end__ |
+#                             +---------+
+
 
 import os, sys, uuid
 from pydantic import BaseModel, Field
 from typing import Annotated, TypedDict, cast
 
 from dotenv import load_dotenv
+from dao.user_profile import UserProfileEntity, UserProfileDAO, UserProfileSchema
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -36,20 +50,9 @@ from langgraph.graph import add_messages, StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
 
 DEFAULT_MODEL_NAME: str = "gemini-2.5-flash"
-MERMAID_DIAGRAM_PATH: str = "target/mermaid_graph.png"
-llm_reference: Runnable
+SQLITE_DB_PATH: str = "user_profiles.sqlite"
 
-# 1. Structured Output Schema using Pydantic
-class UserProfileSchema(BaseModel):
-    full_name: str | None = Field(
-        None, description="The full or partial name of the user."
-    )
-    profession: str | None = Field(
-        None, description="The user's profession or job role."
-    )
-    favorite_language: str | None = Field(
-        None, description="The user's favorite programming language."
-    )
+llm_reference: Runnable
 
 class LLMResponseSchema(BaseModel):
     response_text: str = Field(
@@ -65,19 +68,21 @@ def merge_user_profiles(left: UserProfileSchema, right: UserProfileSchema) -> Us
     print(f"Left user profile: {left}")
     print(f"Right user profile: {right}")
 
-    if right.full_name is not None:
-        left.full_name = right.full_name
+    if right is not None:
+        if right.full_name is not None:
+            left.full_name = right.full_name
 
-    if right.profession is not None:
-        left.profession = right.profession
+        if right.profession is not None:
+            left.profession = right.profession
 
-    if right.favorite_language is not None:
-        left.favorite_language = right.favorite_language
+        if right.favorite_language is not None:
+            left.favorite_language = right.favorite_language
 
     print(f"Merged profile: {left}")
     return left
 
 class AgenticState(TypedDict):
+    user_id: str | None
     user_profile: Annotated[UserProfileSchema, merge_user_profiles]
     messages: Annotated[list[BaseMessage], add_messages]
 
@@ -127,14 +132,14 @@ def should_continue(state: AgenticState) -> bool:
 
     return True
 
-def human_input(state: AgenticState) -> AgenticState:
+def get_human_input_node(state: AgenticState) -> AgenticState:
     user_input: str = input("User: ")
     human_input: HumanMessage = HumanMessage(content=user_input.strip())
     return cast(AgenticState, {
         "messages": [human_input]
     })
 
-def llm_node(state: AgenticState) -> AgenticState:
+def invoke_llm_node(state: AgenticState) -> AgenticState:
     response: LLMResponseSchema = llm_reference.invoke(state["messages"])
     print(f"AI response is: {response}")
     return cast(AgenticState, {
@@ -144,21 +149,50 @@ def llm_node(state: AgenticState) -> AgenticState:
         )]
     })
 
+def save_profile_node(state: AgenticState) -> AgenticState:
+    user_id: str = str(uuid.uuid4())
+    user_profile: UserProfileSchema = state["user_profile"]
+    user_profile_entity: UserProfileEntity = UserProfileEntity(
+        user_id=user_id,
+        user_profile=user_profile
+    )
+
+    user_profile_dao: UserProfileDAO = UserProfileDAO(SQLITE_DB_PATH)
+    user_profile_dao.save_user_profile(user_profile_entity)
+    print(f"Persisted user profile with ID {user_id} to the database.")
+
+    return cast(AgenticState, {
+        "user_id": user_id
+    })
+
+def load_profile_node(state: AgenticState) -> AgenticState:
+    user_id: str | None = state["user_id"]
+
+    user_profile_dao: UserProfileDAO = UserProfileDAO(SQLITE_DB_PATH)
+    user_profile_entity: UserProfileEntity | None = user_profile_dao.load_user_profile(user_id=user_id)
+    print(f"Loaded user profile with ID {user_id} from the database: {user_profile_entity}")
+
+    return cast(AgenticState, {})
+
 def construct_compiled_graph() -> CompiledStateGraph:
     builder: StateGraph = StateGraph(AgenticState)
 
-    builder.add_node("human_input", human_input)
-    builder.add_node("llm_node", llm_node)
+    builder.add_node("get_human_input", get_human_input_node)
+    builder.add_node("invoke_llm", invoke_llm_node)
+    builder.add_node("save_profile", save_profile_node)
+    builder.add_node("load_profile", load_profile_node)
 
-    builder.add_edge(START, "human_input")
-    builder.add_edge("llm_node", "human_input")
+    builder.add_edge(START, "get_human_input")
+    builder.add_edge("invoke_llm", "get_human_input")
+    builder.add_edge("save_profile", "load_profile")
+    builder.add_edge("load_profile", END)
 
     builder.add_conditional_edges(
-        "human_input",
+        "get_human_input",
         should_continue,
         {
-            True: "llm_node",
-            False: END
+            True: "invoke_llm",
+            False: "save_profile"
         }
     )
 
