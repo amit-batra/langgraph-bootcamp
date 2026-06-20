@@ -168,9 +168,10 @@ def save_profile_node(state: AgenticState) -> AgenticState:
 def load_profile_node(state: AgenticState) -> AgenticState:
     user_id: str | None = state["user_id"]
 
-    user_profile_dao: UserProfileDAO = UserProfileDAO(SQLITE_DB_PATH)
-    user_profile_entity: UserProfileEntity | None = user_profile_dao.load_user_profile(user_id=user_id)
-    print(f"Loaded user profile with ID {user_id} from the database: {user_profile_entity}")
+    if user_id is not None:
+        user_profile_dao: UserProfileDAO = UserProfileDAO(SQLITE_DB_PATH)
+        user_profile_entity: UserProfileEntity | None = user_profile_dao.load_user_profile(user_id=user_id)
+        print(f"Loaded user profile with ID {user_id} from the database: {user_profile_entity}")
 
     return cast(AgenticState, {})
 
